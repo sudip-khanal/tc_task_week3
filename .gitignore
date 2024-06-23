@@ -1,0 +1,6 @@
+venv
+config/.env
+apps/book/__pycache__
+apps/review/__pycache__
+apps/user/__pycache__
+config/__pycache__
