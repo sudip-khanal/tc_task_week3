@@ -29,10 +29,7 @@ def book_create(request):
 @api_view(['GET'])
 # @permission_classes([IsAuthenticated])
 def book_list(request):
-    try:
-        books = Book.objects.filter(is_active=True)  # Filter to get only active books
-    except Book.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    books = Book.objects.filter(is_active=True)  # Filter to get only active books
     serializer = BookSerializer(books, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -98,10 +95,7 @@ def create_favourite(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def favourite_book(request):
-    try:
-        favorites = Favorite.objects.filter(user=request.user)
-    except Favorite.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    favorites = Favorite.objects.filter(user=request.user)
     serializer = FavoriteSerializer(favorites, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -1,5 +1,5 @@
 venv
-config/.env
+.env
 apps/book/__pycache__
 apps/review/__pycache__
 apps/user/__pycache__

@@ -119,4 +119,54 @@ def change_password(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_summary="forgot password",
+    operation_description="This endpont send the link to reset password to the user email"
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    serializer = ForgotPasswordSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        current_site = get_current_site(request).domain
+        reset_password_link = f"{request.scheme}://{current_site}/user/reset-password/{uid}/{token}/"
+        subject = "Password Reset"
+        message = f"Hi {user.username},\n\nYou have requested a password reset." \
+                      f"Please click the link below to reset your password:\n\n"\
+                      f"{reset_password_link}\n\nIf you did not request this, "\
+                      f"please ignore this email.\n\nThank you."
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [user.email]
+        )
+        return Response("Check you email Password reset link is sent to your email.", status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@swagger_auto_schema(
+    method='post',
+    operation_summary="reset password",
+    operation_description="This endpont reset password"
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password (request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({"msg": "Invalid link."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not default_token_generator.check_token(user, token):
+            return Response({"msg": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = ResetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=user)
+            return Response({"msg": "Password has been reset successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

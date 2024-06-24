@@ -26,9 +26,22 @@ BASE_DIR = os.path.join(PROJECT_DIR, 'config')
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 ###environment setup#####
 import environ
-env = environ.Env()
+ENV_DIR = environ.Path(__file__) - 2 
+env = environ.Env(
+    DJANGO_SECRET_KEY=str,
+    DJANGO_DB_NAME=str,
+    DJANGO_DB_USER=str,
+    DJANGO_DB_PASS=str,
+    DJANGO_DB_HOST=str,
+    GMAIL_PASS=str,
+    G_MAIL=str,
+)
 environ.Env.read_env()
+ENV_FILE = str(ENV_DIR.path('.env'))  
+environ.Env.read_env(ENV_FILE)
+
 # SECURITY WARNING: keep the secret key used in production secret!
+
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -53,8 +66,6 @@ THIRD_PARTY_APPS = [
    'rest_framework',
    'rest_framework.authtoken',
     'drf_yasg',
-
-
 ]
 
 LOCAL_APPS = [
@@ -100,12 +111,6 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 DATABASES = {
     'default': {
         'ENGINE':'django.db.backends.postgresql_psycopg2',
@@ -159,19 +164,12 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# EMAIL_HOST = 'smtp.example.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER =env('G_MAIL')
-# EMAIL_HOST_PASSWORD =env('GMAIL_PASS')
-# DEFAULT_FROM_EMAIL=env('G_MAIL')
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
-EMAIL_HOST_USER="smartattendance64@gmail.com"
-EMAIL_HOST_PASSWORD = 'nzyqgajzftruczmf'
+EMAIL_HOST_USER=env('G_MAIL')
+EMAIL_HOST_PASSWORD =env('GMAIL_PASS')
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = "smartattendance64@gmail.com"
-
+DEFAULT_FROM_EMAIL = env('G_MAIL')
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',

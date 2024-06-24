@@ -19,10 +19,10 @@ class BookSerializer(serializers.ModelSerializer):
         instance.author = validated_data.get('author', instance.author)
         instance.description = validated_data.get('description', instance.description)
         instance.is_active = validated_data.get('is_active', instance.is_active)
-        instance.save()
+
+        instance.save(update_fields=['title', 'author', 'description', 'is_active', 'password'])
         return instance
     
-
 ###Favorite book serializer
 class FavoriteSerializer(serializers.ModelSerializer):
     #user = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all())

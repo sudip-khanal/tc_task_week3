@@ -64,10 +64,10 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError({"old_password": "Wrong password."})
         return attrs
 
-    def save(self, **kwargs):
+    def save(self):
         user = self.context['request'].user
         user.set_password(self.validated_data['new_password'])
-        user.save()
+        user.save(update_fields=['password'])
         return user
 
 class LogoutSerializer(serializers.Serializer):
@@ -89,3 +89,33 @@ class LogoutSerializer(serializers.Serializer):
             token.delete()
         except Token.DoesNotExist:
             self.fail('bad_token')
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        try:
+            user = User.objects.get(email=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("No user found with this email address.")
+        return value
+
+    def save(self):
+        email = self.validated_data['email']
+        user = User.objects.get(email=email)
+        return user
+    
+class ResetPasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, required=True)
+    confirm_new_password = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_new_password']:
+            raise serializers.ValidationError({"password": "Passwords do not match."})
+        return attrs
+
+    def save(self, user):
+        user.set_password(self.validated_data['new_password'])
+        user.save(update_fields=['password'])
+        return user
