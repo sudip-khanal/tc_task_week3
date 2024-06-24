@@ -10,7 +10,7 @@ This repository contains the solution for Task of Week3
 ### Set Up Virtual Environment:
 
 ```bash
-python -m venv env
+python -m venv venv
 source env/bin/activate  # On Windows use `env\Scripts\activate`
 ```
 
@@ -26,7 +26,7 @@ pip install -r requirements/dev.txt
 
 ### Environment Variables:
 
-Copy `sample.env.py` to `env.py` and configure necessary environment variables like database credentials, API keys, etc.
+Copy `sample.env` to `.env` and configure necessary environment variables like database credentials, API keys, etc.
 
 ### Initialize Database:
 
