@@ -31,7 +31,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ('id', 'user', 'book')
-        read_only_fields = ('user',)  # Ensure this is a tuple
+        read_only_fields = ('user',)  
 
     def validate(self, attrs):
         user = self.context['request'].user
@@ -50,3 +50,5 @@ class FavoriteSerializer(serializers.ModelSerializer):
         representation['user'] = instance.user.username
         representation['book'] = instance.book.title
         return representation
+
+
