@@ -45,7 +45,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/',include('apps.user.urls')),
     path('book/',include('apps.book.urls')),
-    path('review/',include('apps.review.urls'))
+    path('review/',include('apps.review.urls')),
+
+    path('api/book/',include('apps.book.api.urls')),
+    path('api/review/',include('apps.review.api.urls')),
+
+
 
 
 ]
