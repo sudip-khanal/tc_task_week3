@@ -1,4 +1,4 @@
-from apps.review.api.views import ReviewViewSet
+from apps.review.api.v1.views import ReviewViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()

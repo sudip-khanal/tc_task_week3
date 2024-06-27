@@ -47,8 +47,11 @@ urlpatterns = [
     path('book/',include('apps.book.urls')),
     path('review/',include('apps.review.urls')),
 
-    path('api/book/',include('apps.book.api.urls')),
-    path('api/review/',include('apps.review.api.urls')),
+    path('api/book/v1/',include('apps.book.api.v1.urls')),
+    path('api/book/v2/',include('apps.book.api.v2.urls')),
+    path('api/review/v1/',include('apps.review.api.v1.urls')),
+    path('api/review/v2/',include('apps.review.api.v2.urls')),
+
 
 
 

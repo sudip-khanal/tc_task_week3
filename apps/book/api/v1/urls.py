@@ -1,5 +1,5 @@
 
-from apps.book.api.views import BookViewSet
+from apps.book.api.v1.views import BookViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
