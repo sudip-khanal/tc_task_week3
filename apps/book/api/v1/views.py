@@ -6,4 +6,4 @@ from apps.book.models import Book
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.filter(is_active=True)
     serializer_class = BookSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
