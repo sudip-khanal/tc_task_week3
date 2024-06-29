@@ -11,6 +11,7 @@ class ReviewViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
+     # Print statements for debugging purposes
         print("basename:", self.basename)
         print("action:", self.action)
         print("detail:", self.detail)
@@ -19,6 +20,6 @@ class ReviewViewSet(viewsets.ViewSet):
         print("description:", self.description)
 
         queryset = Review.objects.all()
-        review = get_object_or_404(queryset, pk=pk,)
+        review = get_object_or_404(queryset, pk=pk,) # Get the review or return 404 if not found
         serializer = ReviewSerializer(review)
         return Response(serializer.data)

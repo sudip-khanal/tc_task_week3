@@ -1,6 +1,8 @@
 from django.urls import path
 from apps.review.api.v2 import views
 
+# Create view functions for listing and retrieving reviews using ReviewViewSet
+
 review_list = views.ReviewViewSet.as_view({
     'get': 'list'
 })

@@ -65,6 +65,7 @@ def book_update(request, pk):
     operation_summary=" delete the book",
     operation_description="This endpont set the is_active field of book to false"
 )
+# Endpoint to soft delete a book (set is_active to False)
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def book_soft_delete(request, pk):

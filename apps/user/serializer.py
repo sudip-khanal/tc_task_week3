@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
 
+# Serializer for registering a new user
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
@@ -28,9 +29,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
+# Serializer for verifying email with a token
 class VerifyEmailSerializer(serializers.Serializer):
     token = serializers.CharField()
 
+# Serializer for logging in a user
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=255, min_length=3)
     password = serializers.CharField(max_length=68, min_length=6, write_only=True)
@@ -50,6 +53,7 @@ class LoginSerializer(serializers.Serializer):
             'token': Token.objects.get_or_create(user=user)[0].key
         }
 
+# Serializer for changing a user's password
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True, write_only=True)
     new_password = serializers.CharField(required=True, write_only=True)
@@ -90,7 +94,6 @@ class LogoutSerializer(serializers.Serializer):
         except Token.DoesNotExist:
             self.fail('bad_token')
 
-
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -105,7 +108,8 @@ class ForgotPasswordSerializer(serializers.Serializer):
         email = self.validated_data['email']
         user = User.objects.get(email=email)
         return user
-    
+
+# Serializer for resetting a user's password.
 class ResetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True, required=True)
     confirm_new_password = serializers.CharField(write_only=True, required=True)

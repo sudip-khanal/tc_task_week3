@@ -14,7 +14,9 @@ from .serializers import (
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class=RegisterSerializer
-
+    """
+        Determine which serializer class to use based on the action being performed.
+    """
     def get_serializer_class(self):
         if self.action == 'register':
             return RegisterSerializer
@@ -31,7 +33,8 @@ class UserViewSet(viewsets.GenericViewSet):
         elif self.action== 'logout':
             return LogoutSerializer
         return super().get_serializer_class()
-
+    
+    # Action to register a new user.
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
         serializer = self.get_serializer(data=request.data, context={'request': request})
@@ -39,7 +42,8 @@ class UserViewSet(viewsets.GenericViewSet):
             serializer.save()
             return Response({'message': 'Registered successfully. Please verify your email.'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    # Action to verify the email using the provided token.
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def verify_email(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -53,6 +57,7 @@ class UserViewSet(viewsets.GenericViewSet):
         except User.DoesNotExist:
             return Response({'detail': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
+    #  Action to initiate the password reset process.
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def forgot_password(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -60,7 +65,7 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer.save(request)
         return Response({'detail': 'Password reset link sent'}, status=status.HTTP_200_OK)
     
-
+    # Action to reset the password using the provided token and UID.
     # @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def reset_password(self, request, uid=None, token=None):
         serializer = self.get_serializer(data=request.data)
@@ -77,13 +82,15 @@ class UserViewSet(viewsets.GenericViewSet):
             return Response({'detail': 'Password reset successfully'}, status=status.HTTP_200_OK)
         else:
             return Response({'detail': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
-
+        
+    # Action to authenticate and login a user.
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
     
+    # Action to logout the authenticated user by deleting their token.
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def logout(self,request):
         serializer = self.get_serializer(data=request.data)
@@ -92,6 +99,7 @@ class UserViewSet(viewsets.GenericViewSet):
             return Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    # Action to change the authenticated user's password.
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def change_password(self, request):
         serializer = self.get_serializer(data=request.data)
