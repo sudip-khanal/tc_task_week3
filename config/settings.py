@@ -35,6 +35,7 @@ env = environ.Env(
     DJANGO_DB_HOST=str,
     GMAIL_PASS=str,
     G_MAIL=str,
+    SITE_URL=str,
 )
 environ.Env.read_env()
 ENV_FILE = str(ENV_DIR.path('.env'))  
@@ -170,6 +171,7 @@ EMAIL_HOST_USER=env('G_MAIL')
 EMAIL_HOST_PASSWORD =env('GMAIL_PASS')
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = env('G_MAIL')
+SITE_URL = env('SITE_URL')
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',

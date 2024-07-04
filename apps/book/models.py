@@ -14,7 +14,7 @@ class Book(models.Model):
     # Method to perform a soft delete by marking the book as inactive
     def soft_delete(self):
         self.is_active = False
-        self.save()
+        self.save(update_fields=['is_active']) # TODO use update 
         
     def __str__(self):
         return self.title

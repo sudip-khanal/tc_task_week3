@@ -17,7 +17,7 @@ from apps.book.serializers import BookSerializer, FavoriteSerializer
 def book_create(request):
     serializer = BookSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
-        serializer.save(created_by=request.user)
+        serializer.save() 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -27,7 +27,6 @@ def book_create(request):
     operation_description="This endpont return all the books"
 )
 @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
 def book_list(request):
     books = Book.objects.filter(is_active=True)  # Filter to get only active books
     serializer = BookSerializer(books, many=True)
@@ -39,7 +38,6 @@ def book_list(request):
     operation_description="This endpont retrive a specific book details"
 )
 @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
 def book_detail(request, pk):
     book = get_object_or_404(Book, pk=pk, is_active=True)
     serializer = BookSerializer(book)
@@ -70,6 +68,8 @@ def book_update(request, pk):
 @permission_classes([IsAuthenticated])
 def book_soft_delete(request, pk):
     book = get_object_or_404(Book, pk=pk)
+    if book.created_by != request.user:
+        return Response({'message': 'You do not have permission to delete this book.'}, status=status.HTTP_400_BAD_REQUEST)
     book.soft_delete()  
     return Response({'message': 'Book  deleted successfully'}, status=status.HTTP_200_OK)
 
@@ -81,7 +81,7 @@ def book_soft_delete(request, pk):
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def create_favourite(request):
+def add_favourite(request):
     serializer = FavoriteSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         serializer.save()
@@ -94,23 +94,14 @@ def create_favourite(request):
     operation_description="This endpont retrive favouriet books of the user"
 )
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def favourite_book(request):
     favorites = Favorite.objects.filter(user=request.user)
-    serializer = FavoriteSerializer(favorites, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-@swagger_auto_schema(
-    method='delete',
-    operation_summary="delete favourite",
-    operation_description="This endpont delete book favourite "
-)
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def favorite_delete(request, pk):
-    favorite = get_object_or_404(Favorite, pk=pk, user=request.user)
-    favorite.delete()
-    return Response({'message': 'Favorite deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    if favorites.exists():
+        serializer = FavoriteSerializer(favorites, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    else:
+        return Response({"message": "You don't have any favorite books."}, status=status.HTTP_404_NOT_FOUND)
 
 
 
