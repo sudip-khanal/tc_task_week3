@@ -37,7 +37,7 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
-
+    path('api-auth/', include('rest_framework.urls')),
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
@@ -46,18 +46,5 @@ urlpatterns = [
     path('user/',include('apps.user.urls')),
     path('book/',include('apps.book.urls')),
     path('review/',include('apps.review.urls')),
-
-    path('api/book/v1/',include('apps.book.api.v1.urls')),
-    path('api/book/v2/',include('apps.book.api.v2.urls')),
-
-    path('api/review/v1/',include('apps.review.api.v1.urls')),
-    path('api/review/v2/',include('apps.review.api.v2.urls')),
-
-    path('api/user/v1/',include('apps.user.api.v1.urls')),
-
-
-
-
-
 
 ]

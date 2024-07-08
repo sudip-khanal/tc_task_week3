@@ -11,11 +11,6 @@ class Book(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Method to perform a soft delete by marking the book as inactive
-    def soft_delete(self):
-        self.is_active = False
-        self.save(update_fields=['is_active']) # TODO use update 
-        
     def __str__(self):
         return self.title
 

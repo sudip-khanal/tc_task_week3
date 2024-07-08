@@ -1,33 +1,31 @@
-from rest_framework import serializers
-from apps.user.serializer import UserSerializer
-from apps.book.serializers import BookSerializer
-from apps.book.models import Book
-from .models import Review
+from django.db.models import Avg
 
-# Serializer for the Review model
+from rest_framework import serializers
+
+from apps.user.serializer import UserSerializer
+from apps.book.models import Book
+from apps.review.models import Review
+
 class ReviewSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    book = BookSerializer(read_only=True)
-    book_id = serializers.IntegerField(write_only=True)
+    book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.all(), write_only=True)
+    average_rating=serializers.SerializerMethodField()
+
     class Meta:
         model = Review
-        fields = ('id', 'book', 'review_text', 'rating','user','book_id')
+        fields = ('id', 'review_text', 'rating', 'user', 'book','average_rating')
 
-    #  the create method to set the user field to the current user
+    def get_average_rating(self, obj):
+        # Calculate the average rating for the book
+        average_rating = Review.objects.filter(book=obj.book).aggregate(avg_rating=Avg('rating'))['avg_rating']
+        return average_rating
+
+    def validate_rating(self, value):
+        if value > 5 or value < 1:
+            raise serializers.ValidationError('Rating must be between 1 and 5.')
+        return value
+    
     def create(self, validated_data):
-        book_id = validated_data.pop('book_id')
-        try:
-            book = Book.objects.get(id=book_id)
-        except Book.DoesNotExist:
-            raise serializers.ValidationError('Book not found.')        
         validated_data['user'] = self.context['request'].user
-        validated_data['book'] = book
         review = Review.objects.create(**validated_data)
         return review
-    
-    def validate_rating(self, value):
-        if value > 5:
-            raise serializers.ValidationError('Rating cannot be more than 5')
-        elif value < 1:
-            raise serializers.ValidationError('Rating cannot be less than 1')
-        return value
