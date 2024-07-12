@@ -1,8 +1,5 @@
 from django.db.models import Avg
-
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_cookie
+from django.core.cache import cache
 
 from rest_framework import viewsets,status
 from rest_framework.response import Response
@@ -15,19 +12,37 @@ from apps.review.models import Review
 from apps.review.serializer import ReviewSerializer
 
 
-
 class BookViewSet(viewsets.ModelViewSet):
-    queryset = Book.objects.all()
     serializer_class = BookSerializer
-    @method_decorator(cache_page(60 * 60))
-    @method_decorator(vary_on_cookie)
+    queryset = Book.objects.filter(is_active=True)
+
+    def list(self, request):
+        cache_key = 'books_list'
+        if cache_key in cache:
+            print('Data fetched from cache')
+            queryset = cache.get(cache_key)
+        else:
+            print('Data fetched from database')
+            queryset = self.filter_queryset(self.get_queryset())
+            cache.set(cache_key, list(queryset), timeout=60*60)  # Cache the queryset for an hour
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def retrieve(self, request, *args, **kwargs):
-        
         instance = self.get_object()
+        cache_key = f'book_{instance.id}_details'
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            print("Data fetched from cache")
+            return Response(cached_data)
+        
+        print("Data fetched from database")
         serializer = self.get_serializer(instance)
         reviews = Review.objects.filter(book=instance)
         review_serializer = ReviewSerializer(reviews, many=True)
-            # Filter reviews for the book to include only active reviews
+        # Filter reviews for the book to include only active reviews
         reviews = Review.objects.filter(book=instance)
         review_serializer = ReviewSerializer(reviews, many=True)
 
@@ -37,10 +52,18 @@ class BookViewSet(viewsets.ModelViewSet):
         response_data['reviews'] = review_serializer.data
         response_data['average_rating'] = average_rating
 
+        cache.set(cache_key, response_data,timeout=60*60)  
         return Response(response_data)
 
     @action(detail=False, methods=['get'], url_path='top-10-rated')
     def top_rated(self, request):
+        cache_key = 'top_10_rated_books'
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            print("Top 10 rated books fetched from cache")
+            return Response(cached_data)
+        print("Top 10 rated books fetched from database")
         # Get the books with the highest average rating, limiting to top 10
         top_rated_books = Review.objects.values('book').annotate(avg_rating=Avg('rating')).order_by('-avg_rating')[:10]
 
@@ -61,6 +84,7 @@ class BookViewSet(viewsets.ModelViewSet):
 
                 top_rated_books_list.append(book_data)
 
+            cache.set(cache_key, top_rated_books_list,imeout=60*60)
             return Response(top_rated_books_list)
 
         return Response({"detail": "No reviews found."}, status=status.HTTP_404_NOT_FOUND)
@@ -110,7 +134,7 @@ class BookViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated]
             )
     def my_favorites(self, request):   
-        favorites = Favorite.objects.filter(user=request.user)        # Fetch all favorites for the authenticated user
+        favorites = Favorite.objects.filter(user=request.user)# Fetch all favorites for the authenticated user
         serializer = FavoriteSerializer(favorites, many=True)
         return Response(serializer.data)
     
