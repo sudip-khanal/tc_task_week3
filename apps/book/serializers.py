@@ -5,6 +5,7 @@ from rest_framework.exceptions import PermissionDenied
 
 from apps.book.models import Book,Favorite
 from apps.user.serializer import UserSerializer
+from apps.review.serializer import ReviewSerializer
 
 
 class BookSerializer(serializers.ModelSerializer):
@@ -41,3 +42,11 @@ class FavoriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': 'You have already added this book to your favorite list.'})
 
 
+
+class BookWithAvgRatingSerializer(serializers.Serializer):
+    reviews = ReviewSerializer(many=True, read_only=True)
+    average_rating = serializers.FloatField()
+
+    class Meta:
+        model = Book
+        fields = ('id', 'title', 'author', 'reviews', 'average_rating')
