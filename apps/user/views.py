@@ -1,172 +1,106 @@
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.contrib.auth import authenticate
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes,force_str
-from django.contrib.sites.shortcuts import get_current_site
+from django.contrib.auth.models import User
+from django.contrib.auth import logout
+from django.utils.http import urlsafe_base64_decode
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.tokens import default_token_generator 
+
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny,IsAuthenticated
-from rest_framework.authtoken.models import Token
-from drf_yasg.utils import swagger_auto_schema
-from apps.user.serializer import *
-
-# Create your views here.
-User = get_user_model()
-
-@swagger_auto_schema(
-    method='post',
-    operation_summary="register the new user",
-    operation_description="This endpont add new user into the system"
-)
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def register(request):
-    serializer = RegisterSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        token = default_token_generator.make_token(user)
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        current_site = get_current_site(request).domain
-        verification_link = f"{request.scheme}://{current_site}/user/verify-email/{uid}/{token}/"
-        message = f'Hi {user.username}, Use the link below to verify your email \n{verification_link}'
-        subject = 'Verify your email address'
-        send_mail(
-            subject,
-            message,
-            settings.EMAIL_HOST_USER,
-            [user.email]
-        )
-        return Response({'message': 'User registered successfully. Please verify your email.'}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@swagger_auto_schema(
-    method='get',
-    operation_summary="verify email",
-    operation_description="This endpont verify email address"
-)
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def verify_email(request, uidb64, token):
-    try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
-
-    if user and default_token_generator.check_token(user, token):
-        user.is_active = True
-        user.save()
-        return Response({'message': 'Email verified successfully!'}, status=status.HTTP_200_OK)
-    else:
-        return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
-
-@swagger_auto_schema(
-    method='post',
-    operation_summary="login ",
-    operation_description="This endpont used to authenticate the user and return the token"
-)
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def login(request):
-    serializer = LoginSerializer(data=request.data)
-    if serializer.is_valid():
-        username = serializer.validated_data['username']
-        password = serializer.validated_data['password']
-        user = authenticate(username=username, password=password)
-        if user:
-            if not user.is_active:
-                return Response({'detail': 'Account disabled, verify your email first'}, status=status.HTTP_403_FORBIDDEN)
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({
-                'token': token.key,
-                'user_id': user.pk,
-                'username': user.username,
-                'email': user.email
-            }, status=status.HTTP_200_OK)
-        return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@swagger_auto_schema(
-    method='post',
-    operation_summary="logout the user",
-    operation_description="delete the token which is used to authenticate the user"
-)
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def logout(request):
-    serializer = LogoutSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@swagger_auto_schema(
-    method='post',
-    operation_summary="change user password",
-    operation_description="This endpont change the password of user"
-)
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def change_password(request):
-    serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
-    if serializer.is_valid():
-        serializer.save()
-        return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 
 
-@swagger_auto_schema(
-    method='post',
-    operation_summary="forgot password",
-    operation_description="This endpont send the link to reset password to the user email"
-)
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def forgot_password(request):
-    serializer = ForgotPasswordSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        token = default_token_generator.make_token(user)
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        current_site = get_current_site(request).domain
-        reset_password_link = f"{request.scheme}://{current_site}/user/reset-password/{uid}/{token}/"
-        subject = "Password Reset"
-        message = f"Hi {user.username},\n\nYou have requested a password reset." \
-                      f"Please click the link below to reset your password:\n\n"\
-                      f"{reset_password_link}\n\nIf you did not request this, "\
-                      f"please ignore this email.\n\nThank you."
-        send_mail(
-            subject,
-            message,
-            settings.EMAIL_HOST_USER,
-            [user.email]
-        )
-        return Response("Check you email Password reset link is sent to your email.", status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from apps.user.serializer import ( 
+    UserSerializer,
+    ChangePasswordSerializer,
+    ResetPasswordSerializer,
+    LoginSerializer,
+    ForgotPasswordSerializer
+    )
 
-@swagger_auto_schema(
-    method='post',
-    operation_summary="reset password",
-    operation_description="This endpont reset password"
-)
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def reset_password (request, uidb64, token):
-        try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response({"msg": "Invalid link."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not default_token_generator.check_token(user, token):
-            return Response({"msg": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = ResetPasswordSerializer(data=request.data)
+class RegisterUser(GenericAPIView):
+    serializer_class = UserSerializer
+    @method_decorator(cache_page(60 * 60 ))
+    @method_decorator(vary_on_cookie)
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=user)
-            return Response({"msg": "Password has been reset successfully."}, status=status.HTTP_200_OK)
+            serializer.save()
+            return Response({"msg": "Register successfully. Check your email for verification."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class VerifyEmail(APIView):
+    @method_decorator(cache_page(60 * 60 ))
+    @method_decorator(vary_on_cookie)
+    def get(self, request, uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = get_object_or_404(User, pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({'message': 'Invalid verification link.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if default_token_generator.check_token(user, token):
+            if user.is_active:
+                return Response({'message': 'Email already verified.'}, status=status.HTTP_400_BAD_REQUEST)
+            user.is_active = True
+            user.save(update_fields=['is_active'])
+            return Response({'message': 'Email verified successfully.'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserLogin(GenericAPIView):
+    serializer_class = LoginSerializer
+    @method_decorator(cache_page(60 * 60 ))
+    @method_decorator(vary_on_cookie)
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            return Response(data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class ChangePassword(GenericAPIView):
+    permission_classes=[IsAuthenticated]
+    serializer_class = ChangePasswordSerializer
+    @method_decorator(cache_page(60 * 60 ))
+    @method_decorator(vary_on_headers("Authorization"))
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = serializer.change_password()
+            return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ForgotPassword(GenericAPIView):
+    serializer_class = ForgotPasswordSerializer
+    
+    def post(self, request, *args, **kwargs):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.send_reset_pass_email()  # Correctly call reset_pass_mail without additional arguments
+            return Response({'message': 'Password reset email sent successfully.'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class ResetPassword(GenericAPIView):
+    serializer_class = ResetPasswordSerializer
+    @method_decorator(cache_page(60 * 60 ))
+    @method_decorator(vary_on_headers("Authorization"))
+    def post(self, request, uid, token):
+        serializer = ResetPasswordSerializer(data=request.data, context={'uid': uid, 'token': token})
+        if serializer.is_valid():
+            serializer.reset_password()
+            return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class Logout(APIView):
+   permission_classes=[IsAuthenticated]
+   def post(self, request):
+        logout(request)
+        return Response({'message': 'Logged out successfully.'})

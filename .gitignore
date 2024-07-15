@@ -4,3 +4,16 @@ apps/book/__pycache__
 apps/review/__pycache__
 apps/user/__pycache__
 config/__pycache__
+
+apps/review/api/v1/__pycache__
+apps/review/api/v2/__pycache__
+
+apps/book/api/v1/__pycache__
+apps/book/api/v2/__pycache__
+
+apps/book/migrations/__pycache__
+apps/user/migrations/__pycache__
+apps/review/migrations/__pycache__
+
+
+

@@ -1,52 +1,52 @@
-from django.contrib.auth.models import User
+from django.db import IntegrityError
+
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
+
 from apps.book.models import Book,Favorite
+from apps.user.serializer import UserSerializer
+from apps.review.serializer import ReviewSerializer
+
 
 class BookSerializer(serializers.ModelSerializer):
-    created_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), default=serializers.CurrentUserDefault())
+    created_by= UserSerializer(read_only=True)
     class Meta:
         model = Book
-        fields = ('id', 'title', 'author', 'description', 'created_by', 'is_active', 'created_at', 'updated_at')
-        read_only_fields = ('created_at', 'updated_at', 'created_by')
-
+        fields = ('id', 'title', 'author', 'description', 'is_active','created_by')
+        read_only_fields = ('created_at', 'updated_at',)
+        
+    # the create method to set the created_by field to the current user
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
-        book = Book.objects.create(**validated_data)
-        return book
-    
-    def update(self, instance, validated_data):
-        instance.title = validated_data.get('title', instance.title)
-        instance.author = validated_data.get('author', instance.author)
-        instance.description = validated_data.get('description', instance.description)
-        instance.is_active = validated_data.get('is_active', instance.is_active)
+        return super().create(validated_data)
 
-        instance.save(update_fields=['title', 'author', 'description', 'is_active', 'password'])
-        return instance
-    
+    def update(self, instance, validated_data):
+        if instance.created_by != self.context['request'].user:
+            raise PermissionDenied("You do not have permission to update this book.")
+        return super().update(instance, validated_data)
+   
 ###Favorite book serializer
 class FavoriteSerializer(serializers.ModelSerializer):
-    #user = serializers.SlugRelatedField(slug_field='username', queryset=User.objects.all())
-    book = serializers.SlugRelatedField(slug_field='title', queryset=Book.objects.all())
+    user = UserSerializer(read_only=True)
+    book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.all())
 
     class Meta:
         model = Favorite
-        fields = ('id', 'user', 'book')
-        read_only_fields = ('user',)  # Ensure this is a tuple
-
-    def validate(self, attrs):
-        user = self.context['request'].user
-        book = attrs['book']
-        if Favorite.objects.filter(user=user, book=book).exists():
-            raise serializers.ValidationError("You have already favorited this book.")
-        return attrs
+        fields = ['id', 'user', 'book']
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
-        favorite = Favorite.objects.create(**validated_data)
-        return favorite
+        try:
+            return super().create(validated_data)
+        except IntegrityError:
+            raise serializers.ValidationError({'detail': 'You have already added this book to your favorite list.'})
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['user'] = instance.user.username
-        representation['book'] = instance.book.title
-        return representation
+
+
+class BookWithAvgRatingSerializer(serializers.Serializer):
+    reviews = ReviewSerializer(many=True, read_only=True)
+    average_rating = serializers.FloatField()
+
+    class Meta:
+        model = Book
+        fields = ('id', 'title', 'author', 'reviews', 'average_rating')

@@ -35,6 +35,7 @@ env = environ.Env(
     DJANGO_DB_HOST=str,
     GMAIL_PASS=str,
     G_MAIL=str,
+    SITE_URL=str,
 )
 environ.Env.read_env()
 ENV_FILE = str(ENV_DIR.path('.env'))  
@@ -113,7 +114,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE':'django.db.backends.postgresql_psycopg2',
+        'ENGINE':'django.db.backends.postgresql',
         'NAME': env('DB_NAME'), 
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASS'),
@@ -170,9 +171,26 @@ EMAIL_HOST_USER=env('G_MAIL')
 EMAIL_HOST_PASSWORD =env('GMAIL_PASS')
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = env('G_MAIL')
+SITE_URL = env('SITE_URL')
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
     ),
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.JSONParser',
+    ]
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+        "TIMEOUT": 300,  # Cache timeout in seconds
+        "KEY_PREFIX": "example"  # Prefix for cache keys
+    }
+}
