@@ -67,6 +67,7 @@ THIRD_PARTY_APPS = [
    'rest_framework',
    'rest_framework.authtoken',
     'drf_yasg',
+    'django_filters',
 ]
 
 LOCAL_APPS = [
@@ -172,6 +173,7 @@ EMAIL_HOST_PASSWORD =env('GMAIL_PASS')
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = env('G_MAIL')
 SITE_URL = env('SITE_URL')
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
@@ -180,17 +182,25 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
         'rest_framework.parsers.JSONParser',
-    ]
+    ],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-        "TIMEOUT": 300,  # Cache timeout in seconds
-        "KEY_PREFIX": "example"  # Prefix for cache keys
-    }
-}
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://127.0.0.1:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         },
+#         # "TIMEOUT": 300,  # Cache timeout in seconds
+#         "KEY_PREFIX": "example"  # Prefix for cache keys
+#     }
+# }
+# For memcached
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+#         'LOCATION': '127.0.0.1:11211',  
+#     }
+# }
