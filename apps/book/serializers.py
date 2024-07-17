@@ -41,12 +41,11 @@ class FavoriteSerializer(serializers.ModelSerializer):
         except IntegrityError:
             raise serializers.ValidationError({'detail': 'You have already added this book to your favorite list.'})
 
-
-
-class BookWithAvgRatingSerializer(serializers.Serializer):
-    reviews = ReviewSerializer(many=True, read_only=True)
-    average_rating = serializers.FloatField()
+class FavoriteBookSerializer(serializers.ModelSerializer):
+    book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.all())
 
     class Meta:
-        model = Book
-        fields = ('id', 'title', 'author', 'reviews', 'average_rating')
+        model = Favorite
+        fields = ['book']
+
+

@@ -4,15 +4,12 @@ from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator 
 
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_cookie, vary_on_headers
-
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
+from apps.user.filters import UserFilter
 
 
 from apps.user.serializer import ( 
@@ -23,11 +20,9 @@ from apps.user.serializer import (
     ForgotPasswordSerializer
     )
 
-
 class RegisterUser(GenericAPIView):
     serializer_class = UserSerializer
-    @method_decorator(cache_page(60 * 60 ))
-    @method_decorator(vary_on_cookie)
+
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -36,8 +31,6 @@ class RegisterUser(GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class VerifyEmail(APIView):
-    @method_decorator(cache_page(60 * 60 ))
-    @method_decorator(vary_on_cookie)
     def get(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
@@ -56,8 +49,6 @@ class VerifyEmail(APIView):
 
 class UserLogin(GenericAPIView):
     serializer_class = LoginSerializer
-    @method_decorator(cache_page(60 * 60 ))
-    @method_decorator(vary_on_cookie)
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -68,8 +59,6 @@ class UserLogin(GenericAPIView):
 class ChangePassword(GenericAPIView):
     permission_classes=[IsAuthenticated]
     serializer_class = ChangePasswordSerializer
-    @method_decorator(cache_page(60 * 60 ))
-    @method_decorator(vary_on_headers("Authorization"))
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -90,8 +79,6 @@ class ForgotPassword(GenericAPIView):
     
 class ResetPassword(GenericAPIView):
     serializer_class = ResetPasswordSerializer
-    @method_decorator(cache_page(60 * 60 ))
-    @method_decorator(vary_on_headers("Authorization"))
     def post(self, request, uid, token):
         serializer = ResetPasswordSerializer(data=request.data, context={'uid': uid, 'token': token})
         if serializer.is_valid():
