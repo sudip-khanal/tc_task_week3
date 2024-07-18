@@ -49,3 +49,5 @@ class FavoriteBookSerializer(serializers.ModelSerializer):
         fields = ['book']
 
 
+# def get_top_rated_books(self):
+#     return Review.objects.values('book').annotate(avg_rating=Avg('rating')).order_by('-avg_rating')[:10]

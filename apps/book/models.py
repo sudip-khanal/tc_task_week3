@@ -1,5 +1,3 @@
-import django_filters
-
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -28,7 +26,3 @@ class Favorite(models.Model):
     def __str__(self):
         return f"{self.user.username}'s favorite: {self.book.title}"
 
-class BookFilter(django_filters.FilterSet):
-    class Meta:
-        models=Book
-        fields=[]
