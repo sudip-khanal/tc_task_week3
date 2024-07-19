@@ -10,7 +10,7 @@ from apps.book.models import Book , Favorite
 from apps.book.serializers import BookSerializer,FavoriteSerializer,FavoriteBookSerializer
 from apps.review.models import Review
 from apps.review.serializer import ReviewSerializer
-from apps.book.cache import book__cache,top_book_cache
+from apps.book.cache import top_book_cache
 from apps.book.filters import BookFilter
 
 class BookViewSet(viewsets.ModelViewSet):
