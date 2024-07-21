@@ -1,29 +1,41 @@
-import requests
+import pytest
+from rest_framework import status
 
-def test_add_review():
-    token = 'acfa7a9d209f7c194f2b45685030d9165ac58912'
-    headers={
-       'Authorization': f'Token {token}'
-    }
+from apps.book.tests.factories import BookFactory, UserFactory
+from apps.review.models import Review
+from apps.review.serializer import ReviewSerializer
+from apps.review.tests.factories import ReviewFactory
+from apps.review.tests.conftest import BaseTest
 
-    data={
-    "review_text":"this is good book testinnngggg",
-    "rating":5,
-    "book": 1
-    }
-    url='http://localhost:8000/review/'
-    response = requests.post(url,data=data,headers=headers)
-    print(f"Response: {response.status_code}, {response.text}")  
-    assert response.status_code == 201
+@pytest.mark.usefixtures("setup_fixtures")
+class TestReviewViews(BaseTest):
 
+    @pytest.mark.django_db
+    def test_list_reviews(self, auth_client):
+        # Create a few review instances
+        reviews = ReviewFactory.create_batch(5)  # Create review instances
+        url = 'http://localhost:8000/review/'
+        response = auth_client.get(url)
+        
+        assert response.status_code == status.HTTP_200_OK
 
-def test_get_review():
+        reviews = Review.objects.all()
+        serializer = ReviewSerializer(reviews, many=True)
+        assert response.data == serializer.data
 
-    token = 'acfa7a9d209f7c194f2b45685030d9165ac58912'
-    headers={
-       'Authorization': f'Token {token}'
-    }
-    url='http://localhost:8000/review/'
-    response = requests.get(url,headers=headers)
-    print(f"Response: {response.status_code}, {response.text}")  
-    assert response.status_code == 200
+    @pytest.mark.django_db
+    def test_create_review(self, auth_client):
+        book = BookFactory()
+        user = UserFactory()
+        
+        url = 'http://localhost:8000/review/'  
+        data = {
+            'book': book.id,
+            'user': user.id,
+            'rating': 4,
+            'review_text': 'Great book!'
+        }
+        response = auth_client.post(url, data)
+        assert response.status_code == status.HTTP_201_CREATED
+        
+   

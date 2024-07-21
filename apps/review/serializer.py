@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
-from apps.user.serializer import UserSerializer
 from apps.book.models import Book
 from apps.review.models import Review
+from apps.user.serializer import UserSerializer
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

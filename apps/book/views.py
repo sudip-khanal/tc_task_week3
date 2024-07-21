@@ -1,29 +1,24 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import viewsets,status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 
-from apps.book.models import Book , Favorite
-from apps.book.serializers import BookSerializer,FavoriteSerializer,FavoriteBookSerializer
+from apps.book.models import Book,Favorite
 from apps.review.models import Review
+from apps.book.serializers import BookSerializer,FavoriteSerializer,FavoriteBookSerializer
 from apps.review.serializer import ReviewSerializer
 from apps.book.cache import top_book_cache
 from apps.book.filters import BookFilter
+
 
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.filter(is_active=True)
     serializer_class = BookSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = BookFilter
-
-    # def list(self, request):
-    #     cache_key = 'books_list'
-    #     queryset = book__cache(cache_key, self.get_queryset)
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

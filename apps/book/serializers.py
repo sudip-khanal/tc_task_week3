@@ -5,7 +5,6 @@ from rest_framework.exceptions import PermissionDenied
 
 from apps.book.models import Book,Favorite
 from apps.user.serializer import UserSerializer
-from apps.review.serializer import ReviewSerializer
 
 
 class BookSerializer(serializers.ModelSerializer):
@@ -49,5 +48,3 @@ class FavoriteBookSerializer(serializers.ModelSerializer):
         fields = ['book']
 
 
-# def get_top_rated_books(self):
-#     return Review.objects.values('book').annotate(avg_rating=Avg('rating')).order_by('-avg_rating')[:10]

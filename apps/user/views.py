@@ -18,11 +18,12 @@ from apps.user.serializer import (
     ForgotPasswordSerializer
     )
 
+
 class RegisterUser(GenericAPIView):
     serializer_class = UserSerializer
 
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"msg": "Register successfully. Check your email for verification."}, status=status.HTTP_201_CREATED)
@@ -34,16 +35,16 @@ class VerifyEmail(APIView):
             uid = urlsafe_base64_decode(uidb64).decode()
             user = get_object_or_404(User, pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response({'message': 'Invalid verification link.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'msg': 'Invalid verification link.'}, status=status.HTTP_400_BAD_REQUEST)
         
         if default_token_generator.check_token(user, token):
             if user.is_active:
-                return Response({'message': 'Email already verified.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'msg': 'Email already verified.'}, status=status.HTTP_400_BAD_REQUEST)
             user.is_active = True
             user.save(update_fields=['is_active'])
-            return Response({'message': 'Email verified successfully.'}, status=status.HTTP_200_OK)
+            return Response({'msg': 'Email verified successfully.'}, status=status.HTTP_200_OK)
         else:
-            return Response({'message': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'msg': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLogin(GenericAPIView):
     serializer_class = LoginSerializer
@@ -61,7 +62,7 @@ class ChangePassword(GenericAPIView):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             user = serializer.change_password()
-            return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+            return Response({'msg': 'Password changed successfully.'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -72,20 +73,21 @@ class ForgotPassword(GenericAPIView):
         serializer = ForgotPasswordSerializer(data=request.data)
         if serializer.is_valid():
             serializer.send_reset_pass_email()  # Correctly call reset_pass_mail without additional arguments
-            return Response({'message': 'Password reset email sent successfully.'}, status=status.HTTP_200_OK)
+            return Response({'msg': 'Password reset email sent successfully.'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class ResetPassword(GenericAPIView):
     serializer_class = ResetPasswordSerializer
+    
     def post(self, request, uid, token):
         serializer = ResetPasswordSerializer(data=request.data, context={'uid': uid, 'token': token})
         if serializer.is_valid():
             serializer.reset_password()
-            return Response({'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
+            return Response({'msg': 'Password reset successfully.'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class Logout(APIView):
    permission_classes=[IsAuthenticated]
    def post(self, request):
         logout(request)
-        return Response({'message': 'Logged out successfully.'})
+        return Response({'msg': 'Logged out successfully.'})

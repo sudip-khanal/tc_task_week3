@@ -9,7 +9,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import serializers
 
-from apps.user.utils import send_verification_email,send_reset_email
+from apps.user.tasks import send_verification_email,send_reset_email
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -32,8 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.is_active = False  # Inactive until email is verified
         user.save()
-        send_verification_email(user)  # Pass the user object to send_verification_email
-        
+        send_verification_email.delay(user.id) # Pass the user object to send_verification_email
         return user
        
 
@@ -90,7 +89,8 @@ class ForgotPasswordSerializer(serializers.Serializer):
         return value
     
     def send_reset_pass_email(self):
-        send_reset_email(self.user)
+        send_reset_email.delay(self.user.id)
+
     
 # Serializer for resetting the user's password
 class ResetPasswordSerializer(serializers.Serializer):

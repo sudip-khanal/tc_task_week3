@@ -15,5 +15,8 @@ apps/book/migrations/__pycache__
 apps/user/migrations/__pycache__
 apps/review/migrations/__pycache__
 
+apps/book/tests/__pycache__
+apps/user/tests/__pycache__
+apps/review/tests/__pycache__
 
-
+.pytest_cache
