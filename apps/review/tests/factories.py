@@ -6,7 +6,7 @@ class ReviewFactory(factory.django.DjangoModelFactory):
     book = factory.SubFactory(BookFactory)
     user = factory.SubFactory(UserFactory)
     rating = factory.Faker('random_int', min=1, max=5)
-    review_text= factory.Faker('text')
+    # review_text= factory.Faker('text')
 
     class Meta:
         model = Review

@@ -6,7 +6,7 @@ from django.utils.encoding import force_bytes
 from django.conf import settings
 
 from apps.user.models import User
-from apps.user.tasks import send_verification_email
+from apps.user.utils import send_verification_email
 
 
 class TestSendVerificationEmail(unittest.TestCase):

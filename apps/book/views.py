@@ -31,7 +31,6 @@ class BookViewSet(viewsets.ModelViewSet):
         response_data['average_rating'] = average_rating
         response_data['reviews'] = review_serializer.data
         return Response(response_data)
-
     # Get the books with the highest average rating, limiting to top 10
     def get_top_rated_books(self):
         return Review.objects.values('book').annotate(avg_rating=Avg('rating')).order_by('-avg_rating')[:10]

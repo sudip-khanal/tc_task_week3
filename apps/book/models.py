@@ -19,7 +19,7 @@ class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
 
-    # Ensure a user can not favorite the same book more than once
+    #  a user can not favorite the same book more than once
     class Meta:
         unique_together = ('user', 'book')
 
