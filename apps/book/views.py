@@ -8,10 +8,15 @@ from rest_framework.decorators import action
 
 from apps.book.models import Book,Favorite
 from apps.review.models import Review
-from apps.book.serializers import BookSerializer,FavoriteSerializer,FavoriteBookSerializer
+
 from apps.review.serializer import ReviewSerializer
 from apps.book.cache import top_book_cache
 from apps.book.filters import BookFilter
+from apps.book.serializers import (
+    BookSerializer,
+    FavoriteSerializer,
+    FavoriteBookSerializer
+    )
 
 
 class BookViewSet(viewsets.ModelViewSet):
@@ -26,16 +31,23 @@ class BookViewSet(viewsets.ModelViewSet):
         reviews = Review.objects.filter(book=instance)
         review_serializer = ReviewSerializer(reviews, many=True)
         # Calculate the average rating for the book
-        average_rating = reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
+        average_rating = reviews.aggregate(
+            avg_rating=Avg('rating'))['avg_rating']
+        
         response_data = serializer.data
         response_data['average_rating'] = average_rating
         response_data['reviews'] = review_serializer.data
         return Response(response_data)
+    
     # Get the books with the highest average rating, limiting to top 10
     def get_top_rated_books(self):
         return Review.objects.values('book').annotate(avg_rating=Avg('rating')).order_by('-avg_rating')[:10]
     
-    @action(detail=False, methods=['get'], url_path='top-10-rated')
+    @action(
+            detail=False,
+            methods=['get'],
+            url_path='top-10-rated'
+            )
     def top_rated(self, request):
         cache_key = 'top_10_rated_books'
         top_rated_books = top_book_cache(cache_key, self.get_top_rated_books)
@@ -62,9 +74,15 @@ class BookViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if instance.created_by != request.user:
-            return Response({"msg": "You dont have premission to delete this book."}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({
+                    "msg": "You dont have premission to delete this book."},
+                    status=status.HTTP_400_BAD_REQUEST)
+        
         self.perform_destroy(instance)
-        return Response({"msg": "book deleted."},status=status.HTTP_200_OK)
+        return Response({
+                    "msg": "book deleted."},
+                    status=status.HTTP_200_OK)
     
     def perform_destroy(self, instance):
         instance.is_active=False
@@ -78,7 +96,10 @@ class BookViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         book = self.get_object()
         data = {'book': book.id, 'user': request.user.id}
-        serializer = FavoriteSerializer(data=data, context={'request': request})
+        serializer = FavoriteSerializer(
+                data=data,
+                context={'request': request
+                })
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -95,11 +116,19 @@ class BookViewSet(viewsets.ModelViewSet):
         favorite = Favorite.objects.filter(book=book, user=user)
         if favorite.exists():
             favorite.delete()
-            return Response({'msg': 'Book removed from favorites successfully.'}, status=status.HTTP_200_OK)
-        return Response({'msg': 'You have not favorited this book.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'msg': 'Book removed from favorites successfully.'}, 
+                status=status.HTTP_200_OK)
+        return Response({
+            'msg': 'You have not favorited this book.'}, 
+            status=status.HTTP_400_BAD_REQUEST)
     
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(
+            detail=False, 
+            methods=['get'],
+            permission_classes=[IsAuthenticated]
+            )
     def my_favorites(self, request):  
         favorites = Favorite.objects.filter(user=request.user)  
         serializer = FavoriteBookSerializer(favorites, many=True)

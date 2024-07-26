@@ -25,12 +25,8 @@ class RegisterUser(GenericAPIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            user=serializer.save()
-            response_data = {
-                'username': user.username,
-                'email': user.email,
-                'msg': 'Register successfully. Check your email for verification.'
-            }
+            user = serializer.save()
+            response_data = serializer.data
             return Response(response_data, status=status.HTTP_201_CREATED)               
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

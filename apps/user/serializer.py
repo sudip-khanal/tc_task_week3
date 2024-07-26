@@ -19,7 +19,13 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'confirm_password')
+        fields = (
+            'id',
+            'username',
+            'email',
+            'password',
+            'confirm_password'
+        )
 
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:
@@ -34,7 +40,8 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])       
         user.is_active = False  # Inactive until email is verified
         user.save()
-        transaction.on_commit(lambda:send_verification_email_task.delay(user.id)) # Pass the user object to send_verification_email
+        print(f"Scheduling send_verification_email_task for user {user.id}")
+        transaction.on_commit(lambda:send_verification_email_task.delay(user.id)) 
         return user
        
 

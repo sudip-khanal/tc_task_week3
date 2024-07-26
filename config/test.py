@@ -1,8 +1,13 @@
+from django.test import override_settings
 
 from rest_framework.test import APITestCase,APIClient
 from rest_framework.authtoken.models import Token
 
 from apps.user.tests.factories import UserFactory
+
+@override_settings(
+    CELERY_TASK_ALWAYS_EAGER=True
+)
 
 class TestApi(APITestCase):
 

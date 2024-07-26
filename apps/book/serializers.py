@@ -11,7 +11,13 @@ class BookSerializer(serializers.ModelSerializer):
     created_by= UserSerializer(read_only=True)
     class Meta:
         model = Book
-        fields = ('id', 'title', 'author', 'description', 'is_active','created_by')
+        fields = (
+                'id',
+                'title',
+                'author',
+                'description', 
+                'is_active',
+                'created_by')
         read_only_fields = ('created_at', 'updated_at',)
         
     # the create method to set the created_by field to the current user

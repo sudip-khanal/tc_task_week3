@@ -14,7 +14,7 @@ def send_verification_email_task(user_id):
     """
     Task to send verification email
     """
-    user = User.objects.filter(id=user_id).first()
+    user = User.objects.filter(id=user_id).first()  
     if user:
         send_verification_email(user)
     else:
@@ -28,10 +28,9 @@ def send_reset_email_task(user_id):
     """
     user = User.objects.filter(id=user_id)
     if user:
-        sleep(30)  # delay for testing purposes
+        #sleep(30)  # delay for testing purposes
         send_reset_email(user)
     else:
         logger.error("Failed to send the email, user not found")
-
 
 
