@@ -10,7 +10,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import serializers
 
-from apps.user.tasks import send_verification_email_task,send_reset_email_task
+from apps.user.tasks import send_verification_email_task
+from apps.user.utils import send_reset_email
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
@@ -91,14 +92,17 @@ class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
     def validate_email(self, value):
-        if not User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("User not found with this email address.")
+        try:
+            self.user = User.objects.get(email=value)  
+        except User.DoesNotExist:
+            raise serializers.ValidationError(" User not found with this email address.")
         return value
+    
+    def send_reset_pass_email(self):
+        send_reset_email(self.user)
 
-    def send_reset_email(self, validated_data):
-        user = User.objects.get(email=validated_data['email'])
-        send_reset_email_task.delay(user.id)
-        return validated_data
+    def send_reset_pass_email(self):
+        send_reset_email(self.user)
 
     
 # Serializer for resetting the user's password

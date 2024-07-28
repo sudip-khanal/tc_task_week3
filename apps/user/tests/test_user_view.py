@@ -11,6 +11,7 @@ from apps.user.tests.factories import UserFactory
 
 
 class TestUser(TestApi):
+
     @patch('apps.user.tasks.send_verification_email_task')
     def test_register_user(self, mock_send_verification_email_task):
         """
@@ -35,10 +36,19 @@ class TestUser(TestApi):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['username'], data['username'])
         self.assertEqual(response.data['email'], data['email'])
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        user_id = response.data['id']
-        self.assertTrue(mock_send_verification_email_task(user_id).is_callled())
+        # Test check try to register with already taken email 
+        data['email']= 'testuser1@example.com'
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+
+        # Test try to register with mismatched password and confirm_password
+        data['confirm_password']= 'password@1233543'
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+
+        self.assertTrue(mock_send_verification_email_task.is_called())
+
 
     def test_verify_email(self):
         # Create a user who is not yet active
@@ -47,15 +57,19 @@ class TestUser(TestApi):
         # Generate the URL parameters
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        url = f'/user/verify_email/{uidb64}/{token}/'  
-        
-        # Simulate the user clicking the verification link
+
+         # Test with an invalid token
+        url = f'/user/verify_email/{uidb64}/invalidtoken/'  
         response = self.client.get(url)
-        # Check the response status
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        url = f'/user/verify_email/{uidb64}/{token}/'  
+        response = self.client.get(url)
         self.assertEqual(response.status_code,status.HTTP_200_OK)
+
         user.refresh_from_db()
-        # Check that the user is now active
         self.assertTrue(user.is_active)
+
 
     def test_user_login(self):
         """
@@ -66,16 +80,25 @@ class TestUser(TestApi):
         """
         user = self.create_user() 
         url = '/user/login/' 
-        # Data for a valid login attempt
         data = {
             'username': user.username,
             'password': 'password@123'  
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Ensure the response contains the token
         self.assertIsNotNone(response.data['token'])
 
+        # Test login with  wrong password
+        data['password']='passwd'
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code,status.HTTP_401_UNAUTHORIZED )
+
+        # Test login with not registered username
+        data['username']='myusername'
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code,status.HTTP_401_UNAUTHORIZED )
+
+     
     def test_change_passwords(self):
         """
         Test case for changing a user's password.
@@ -84,29 +107,28 @@ class TestUser(TestApi):
         2. The new password confirmation matches the new password.
         """
         user = self.create_user()
-        self.client.force_authenticate(user=user)
 
-        url = '/user/change_password/' 
+        url = '/user/change_password/'
 
         # Test changing password with incorrect old password
-        old_pass_wrong_data = {
+        data = {
             'old_password': 'wrongpassword',
             'new_password': 'newpassword@123',
             'confirm_new_password': 'newpassword@123'
         }
-        response = self.client.post(url, old_pass_wrong_data)
+        self.client.force_authenticate(user=user)       
+        response = self.client.post(url,data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('old_password', response.data)
 
-        # Valid data for changing the password
-        data = {
-            'old_password': 'password@123',  
-            'new_password': 'newpassword@123',
-            'confirm_new_password': 'newpassword@123'
-        }
-        # Change the password
+        # Test changing password with correct old password
+        data['old_password'] = 'password@123'
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Test changing with mismatched new password
+        data['confirm_new_password']='newpwd'
+        response = self.client.post(url,data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
     def test_logout(self):
@@ -118,21 +140,19 @@ class TestUser(TestApi):
         """
         # Create and authenticate the user
         user = self.create_user()
-        self.client.force_authenticate(user=user) 
         
         url = '/user/logout/' 
+        self.client.force_authenticate(user=user) 
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        # Attempt to access a protected endpoint with the same after the logout
+        # Attempt to access a protected endpoint with the same token after the logout
         protected_url = '/user/change_password/' 
         protected_response = self.client.get(protected_url)
-        
-        # Verify that access to the protected endpoint is denied
         self.assertEqual(protected_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @patch('apps.user.tasks.send_reset_email_task')  
-    def test_forgot_password_send_mail(self, mock_send_reset_email_task):
+
+    def test_forgot_password(self):
         """
         Test case for forgot password functionality.
         Verifies that:
@@ -149,9 +169,8 @@ class TestUser(TestApi):
         }
         
         response = self.client.post(url, data)
-        self.assertTrue(mock_send_reset_email_task.is_callled())
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-     
+
     def test_reset_passwords(self):
         """
         Test case for resetting a user's password 
@@ -161,8 +180,7 @@ class TestUser(TestApi):
         """
         # This user should have received a reset password  link in email
         user = self.create_user()  
-
-        # # Generate UID and token for password reset 
+        # Generate UID and token for password reset 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
@@ -177,6 +195,11 @@ class TestUser(TestApi):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        # Test mismatched new_password and confirm_new_password
+        data['confirm_new_password']='1234'
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
          # Test with an invalid token
         invalid_token_url = f'/user/reset_password/{uid}/invalidtoken/'
         response = self.client.post(invalid_token_url, data, format='json')
@@ -190,3 +213,6 @@ class TestUser(TestApi):
         response = self.client.post('/user/login/', login_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+
+
+       

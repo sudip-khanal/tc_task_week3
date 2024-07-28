@@ -21,16 +21,15 @@ def send_verification_email_task(user_id):
         logger.error("User not found")
 
 
-@shared_task(name='send_reset_email')
-def send_reset_email_task(user_id):
-    """
-    Task to send password reset email
-    """
-    user = User.objects.filter(id=user_id)
-    if user:
-        #sleep(30)  # delay for testing purposes
-        send_reset_email(user)
-    else:
-        logger.error("Failed to send the email, user not found")
+# @shared_task(name='send_reset_email')
+# def send_reset_email_task(user_id):
+#     """
+#     Task to send password reset email
+#     """
+#     user = User.objects.filter(id=user_id)
+#     if user:
+#         send_reset_email(user)
+#     else:
+#         logger.error("Failed to send the email, user not found")
 
 
