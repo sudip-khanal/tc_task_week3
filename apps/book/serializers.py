@@ -5,17 +5,23 @@ from rest_framework.exceptions import PermissionDenied
 
 from apps.book.models import Book,Favorite
 from apps.user.serializer import UserSerializer
-from apps.review.serializer import ReviewSerializer
 
 
 class BookSerializer(serializers.ModelSerializer):
     created_by= UserSerializer(read_only=True)
     class Meta:
         model = Book
-        fields = ('id', 'title', 'author', 'description', 'is_active','created_by')
+        fields = (
+                'id',
+                'title',
+                'author',
+                'description', 
+                'is_active',
+                'created_by'
+                )
         read_only_fields = ('created_at', 'updated_at',)
         
-    # the create method to set the created_by field to the current user
+    #  create method to set the created_by field to the current user
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
         return super().create(validated_data)
@@ -25,7 +31,8 @@ class BookSerializer(serializers.ModelSerializer):
             raise PermissionDenied("You do not have permission to update this book.")
         return super().update(instance, validated_data)
    
-###Favorite book serializer
+
+#Favorite book serializer
 class FavoriteSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.all())
@@ -40,6 +47,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
             return super().create(validated_data)
         except IntegrityError:
             raise serializers.ValidationError({'detail': 'You have already added this book to your favorite list.'})
+
 
 class FavoriteBookSerializer(serializers.ModelSerializer):
     book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.all())

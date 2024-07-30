@@ -1,4 +1,5 @@
-from django.contrib.auth.models import User
+from django.db import transaction
+from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_bytes
@@ -9,7 +10,9 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import serializers
 
-from apps.user.utils import send_verification_email,send_reset_email
+from apps.user.tasks import send_verification_email_task
+from apps.user.utils import send_reset_email
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -17,7 +20,13 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'confirm_password')
+        fields = (
+            'id',
+            'username',
+            'email',
+            'password',
+            'confirm_password'
+        )
 
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:
@@ -29,11 +38,11 @@ class UserSerializer(serializers.ModelSerializer):
             username=validated_data['username'],
             email=validated_data['email']
         )
-        user.set_password(validated_data['password'])
+        user.set_password(validated_data['password'])       
         user.is_active = False  # Inactive until email is verified
         user.save()
-        send_verification_email(user)  # Pass the user object to send_verification_email
-        
+        print(f"Scheduling send_verification_email_task for user {user.id}")
+        transaction.on_commit(lambda:send_verification_email_task.delay(user.id)) 
         return user
        
 
@@ -84,13 +93,17 @@ class ForgotPasswordSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         try:
-            self.user = User.objects.get(email=value)  # check if the email is associated with a user or not
+            self.user = User.objects.get(email=value)  
         except User.DoesNotExist:
             raise serializers.ValidationError(" User not found with this email address.")
         return value
     
     def send_reset_pass_email(self):
         send_reset_email(self.user)
+
+    def send_reset_pass_email(self):
+        send_reset_email(self.user)
+
     
 # Serializer for resetting the user's password
 class ResetPasswordSerializer(serializers.Serializer):

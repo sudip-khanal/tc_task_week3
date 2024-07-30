@@ -68,6 +68,7 @@ THIRD_PARTY_APPS = [
    'rest_framework.authtoken',
     'drf_yasg',
     'django_filters',
+    'corsheaders',
 ]
 
 LOCAL_APPS = [
@@ -82,13 +83,16 @@ INSTALLED_APPS = DJANGO_APPS+LOCAL_APPS+THIRD_PARTY_APPS
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000'
+]
 ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
@@ -186,17 +190,17 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }
 
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://127.0.0.1:6379/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         },
-#         # "TIMEOUT": 300,  # Cache timeout in seconds
-#         "KEY_PREFIX": "example"  # Prefix for cache keys
-#     }
-# }
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+        # "TIMEOUT": 300,  # Cache timeout in seconds
+        "KEY_PREFIX": "example"  # Prefix for cache keys
+    }
+}
 # For memcached
 # CACHES = {
 #     'default': {
@@ -204,3 +208,11 @@ REST_FRAMEWORK = {
 #         'LOCATION': '127.0.0.1:11211',  
 #     }
 # }
+
+# CELERY STUFF
+# CELERY STUFF
+BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
