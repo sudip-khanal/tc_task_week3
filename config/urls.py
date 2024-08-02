@@ -22,6 +22,13 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+
+from strawberry.django.views import AsyncGraphQLView
+
+from .schema import schema
+
+
+
 schema_view = get_schema_view(
    openapi.Info(
       title="Snippets API",
@@ -47,4 +54,6 @@ urlpatterns = [
     path('book/',include('apps.book.urls')),
     path('review/',include('apps.review.urls')),
 
-]
+    path("graphql/", AsyncGraphQLView.as_view(schema=schema)),
+    
+    ]

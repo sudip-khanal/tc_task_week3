@@ -69,6 +69,7 @@ THIRD_PARTY_APPS = [
     'drf_yasg',
     'django_filters',
     'corsheaders',
+    'strawberry.django',
 ]
 
 LOCAL_APPS = [
@@ -90,6 +91,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  
+
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000'
 ]
@@ -198,7 +202,7 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
         # "TIMEOUT": 300,  # Cache timeout in seconds
-        "KEY_PREFIX": "example"  # Prefix for cache keys
+        "KEY_PREFIX": "example"  
     }
 }
 # For memcached
@@ -209,7 +213,6 @@ CACHES = {
 #     }
 # }
 
-# CELERY STUFF
 # CELERY STUFF
 BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'
