@@ -101,8 +101,8 @@ class ForgotPasswordSerializer(serializers.Serializer):
     def send_reset_pass_email(self):
         send_reset_email(self.user)
 
-    def send_reset_pass_email(self):
-        send_reset_email(self.user)
+    # def send_reset_pass_email(self):
+    #     send_reset_email(self.user)
 
     
 # Serializer for resetting the user's password
