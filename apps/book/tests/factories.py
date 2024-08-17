@@ -5,6 +5,7 @@ from apps.user.tests.factories import UserFactory
 
 class BookFactory(factory.django.DjangoModelFactory):
     created_by = factory.SubFactory(UserFactory)
+    
     class Meta:
         model = Book
 

@@ -19,7 +19,7 @@ class BookSerializer(serializers.ModelSerializer):
                 'is_active',
                 'created_by'
                 )
-        read_only_fields = ('created_at', 'updated_at',)
+        read_only_fields = ('pdf_file','created_at', 'updated_at',)
         
     #  create method to set the created_by field to the current user
     def create(self, validated_data):
@@ -56,4 +56,8 @@ class FavoriteBookSerializer(serializers.ModelSerializer):
         model = Favorite
         fields = ['book']
 
+class BookPdfSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= Book
+        fields=['id','title','pdf_file']
 

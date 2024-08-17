@@ -29,6 +29,7 @@ import environ
 ENV_DIR = environ.Path(__file__) - 2 
 env = environ.Env(
     DJANGO_SECRET_KEY=str,
+    DJANGO_ALLOWED_HOSTS=(list, []),
     DJANGO_DB_NAME=str,
     DJANGO_DB_USER=str,
     DJANGO_DB_PASS=str,
@@ -48,7 +49,7 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -70,7 +71,7 @@ THIRD_PARTY_APPS = [
     'django_filters',
     'corsheaders',
     'strawberry.django',
-]
+    ]
 
 LOCAL_APPS = [
    'apps.user',
@@ -219,3 +220,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+# fore media and files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')

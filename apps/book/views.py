@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 
+from PyPDF2 import PdfReader  # Use PyPDF2 to read PDF content
+
 from apps.book.models import Book,Favorite
 from apps.review.models import Review
 from apps.review.serializer import ReviewSerializer
@@ -14,9 +16,10 @@ from apps.book.filters import BookFilter
 from apps.book.serializers import (
     BookSerializer,
     FavoriteSerializer,
-    FavoriteBookSerializer
+    FavoriteBookSerializer,
+    BookPdfSerializer
     )
-
+from ollamaservice.summery_service import summarizer
 
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.filter(is_active=True)
@@ -100,8 +103,118 @@ class BookViewSet(viewsets.ModelViewSet):
     
 
 
+    # @action(detail=True,methods=['get'],serializer_class = BookPdfSerializer)
+    # def get_pdf(self, request, pk=None):
+    #     book=BookPdfSerializer()
+    #     pdf_reader = PdfReader(book.pdf_file)
+    #     text_content = ""
+    #     for page in pdf_reader.pages:
+    #         text_content += page.extract_text()
 
+    #     # Return the response with the extracted text and PDF URL
+    #     return Response({
+    #         'book_title': book.title,
+    #         'pdf_url': book.pdf_file.url,
+    #         'extracted_text': text_content,
+    #     })
 
+    @action(detail=True, methods=['get'], serializer_class=BookPdfSerializer)
+    def get_pdf(self, request, pk=None):
+        # Fetch the correct book instance
+        book = self.get_object()
+
+        # Initialize PdfReader with the actual book's PDF file
+        pdf_reader = PdfReader(book.pdf_file)
+
+        # Extract text content from the PDF
+        text_content = ""
+        for page in pdf_reader.pages:
+            text_content += page.extract_text()
+
+        summary = summarizer(text_content)
+
+        # Return the response with the extracted text and PDF URL
+        return Response({
+            'book_title': book.title,
+            'pdf_url': book.pdf_file.url,
+            'extracted_text': text_content,
+            'summary':summary
+        })
+
+    @action(detail=False)
+    def get_summery(self, request, pk=None):
+        # try:
+        #     book = self.get_object()  # Fetch the book instance
+        # except Book.DoesNotExist:
+        #     return Response({"error": "Book not found"}, status=404)
+        # book=BookPdfSerializer()
+        # # Extract text from the PDF file
+        # pdf_reader = PdfReader(book.pdf_file)
+        text_content = """      We have configured our templates and added the first page to our project, a static homepage.
+                                We also added tests which should always be included with new code changes. Some developers
+                                prefer a method called Test-Driven Development where they write the tests first and then the
+                                code. Personally I prefer to write the tests immediately after which is what we’ll do here.
+                                Both approaches work, the key thing is to be rigorous with your testing. Django projects quickly
+                                grow in size where it’s impossible to remember all the working pieces in your head. And if you
+                                are working on a team, it is a nightmare to work on an untested codebase. Who knows what will
+                                break?
+                                In the next chapter we’ll add user registration to our project: log in, log out, and sign up.
+                                
+                                """
+        # for page in pdf_reader.pages:
+        #     text_content += page.extract_text()
+
+        # Generate the summary using the `invoke` function
+        summary = summarizer(text_content)
+
+        # Return the response with the extracted text, summary, and PDF URL
+        return Response({
+            # 'book_title': book.title,
+            # 'pdf_url': book.pdf_file.url,
+            'extracted_text': text_content,
+            'summary': summary
+        })
+
+  # Here you would pass the text_content to the Ollama model
+        # book_summary= summazier(text_content)
+        # For now, we'll simulate this by returning the text.
+
+        # Return the response with the text content and the PDF URL
+
+    @action(detail=True, methods=['get'], serializer_class=BookPdfSerializer)
+    def pdfs(self, request, pk=None):
+        try:
+            # Retrieve the actual book instance
+            book = self.get_object()
+        except Book.DoesNotExist:
+            return Response({"error": "Book not found"}, status=404)
+
+        # Extract text from the PDF file
+        pdf_path = book.pdf_file.path  # This gives you the absolute path to the file
+        text_content = ""
+
+        try:
+            # Open the PDF file
+            with open(pdf_path, 'rb') as pdf_file:
+                pdf_reader = PdfReader(pdf_file)
+                for page in pdf_reader.pages:
+                    text_content += page.extract_text()
+
+        except FileNotFoundError:
+            return Response({"error": "File not found"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+        # Generate a summary (This is a placeholder for now)
+        summary = "This is where the Ollama-generated summary will be."
+
+        # Return the response with the extracted text and PDF URL
+        return Response({
+            'book_title': book.title,
+            'pdf_url': book.pdf_file.url,  # This gives you the URL to access the file
+            'extracted_text': text_content,
+            'summary': summary
+        })
 
 
     # Get the books with the highest average rating, limiting to top 10
@@ -135,3 +248,33 @@ class BookViewSet(viewsets.ModelViewSet):
                 top_rated_books_list.append(book_data)
             return Response(top_rated_books_list)
         return Response({"detail": "No reviews found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+    # def get(self, request, pk, format=None):
+    #     try:
+    #         # Fetch the book by ID
+    #         book = Book.objects.get(pk=pk)
+    #     except Book.DoesNotExist:
+    #         raise NotFound("Book not found.")
+
+    #     # Extract text from the PDF file
+    #     pdf_reader = PdfReader(book.pdf_file)
+    #     text_content = ""
+    #     for page in pdf_reader.pages:
+    #         text_content += page.extract_text()
+
+    #     # Here you would pass the text_content to the Ollama model
+
+    #     # For now, we'll simulate this by returning the text.
+
+    #     # Return the response with the text content and the PDF URL
+    #     return Response({
+    #         'book_title': book.title,
+    #         'pdf_url': book.pdf_file.url,
+    #         'extracted_text': text_content,
+    #         # Placeholder for the Ollama summary (to be implemented later)
+    #         'summary': "This is where the Ollama-generated summary will be."
+    #     })
